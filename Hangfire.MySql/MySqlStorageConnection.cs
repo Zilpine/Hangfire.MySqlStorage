@@ -284,15 +284,10 @@ namespace Hangfire.MySql
                 connection
                     .Query<string>($@"
 select `Value` 
-from (
-	    select `Value`, @rownum := @rownum + 1 AS rank
-	    from `{_storageOptions.TablesPrefix}Set`,
-            (select @rownum := 0) r 
-        where `Key` = @key
-        order by Id
-     ) ranked
-where ranked.rank between @startingFrom and @endingAt",
-                        new { key = key, startingFrom = startingFrom + 1, endingAt = endingAt + 1 })
+from `{_storageOptions.TablesPrefix}Set`
+WHERE `Key` = @key
+ORDER BY Id",
+                        new { key = key }).Skip(startingFrom).Take(endingAt-startingFrom)
                     .ToList());
         }
 

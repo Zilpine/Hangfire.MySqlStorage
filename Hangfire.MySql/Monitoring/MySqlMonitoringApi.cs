@@ -353,20 +353,17 @@ select sum(s.`Value`) from (
             Func<SqlJob, Job, Dictionary<string, string>, TDto> selector)
         {
             string jobsSql =
-$@"select * from (
-  select j.*, s.Reason as StateReason, s.Data as StateData, @rownum := @rownum + 1 AS rank
+$@"select j.*, s.Reason as StateReason, s.Data as StateData
   from `{_storageOptions.TablesPrefix}Job` j
-    cross join (SELECT @rownum := 0) r
   left join `{_storageOptions.TablesPrefix}State` s on j.StateId = s.Id
   where j.StateName = @stateName
-  order by j.Id desc
-) as j where j.rank between @start and @end ";
+  order by j.Id desc";
 
             var jobs = 
                 connection.Query<SqlJob>(
                     jobsSql,
-                    new { stateName = stateName, start = @from + 1, end = @from + count })
-                    .ToList();
+                    new { stateName = stateName/*, start = @from + 1, end = @from + count */})
+                    .Skip(from).Take(count).ToList();
 
             return DeserializeJobs(jobs, selector);
         }
